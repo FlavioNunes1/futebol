@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro de Jogos de Futebol</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 20px auto;
+      padding: 10px;
+      background: #f0f0f0;
+      color: #333;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    form {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, select, button {
+      margin-top: 5px;
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .jogo {
+      background: white;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    .gol {
+      background: #e7f3ff;
+      margin: 5px 0;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+    .gol span {
+      font-weight: bold;
+      color: #007bff;
+    }
+    .btn-excluir {
+      background: #dc3545;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      float: right;
+      font-size: 12px;
+    }
+    .btn-excluir:hover {
+      background: #a71d2a;
+    }
+    .gols-container {
+      margin-top: 10px;
+      border-top: 1px solid #ccc;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Registrar Jogo de Futebol</h1>
+
+  <form id="formJogo">
+    <label for="data">Data do Jogo</label>
+    <input type="date" id="data" required />
+
+    <label for="timeA">Time A</label>
+    <input type="text" id="timeA" placeholder="Nome do Time A" required />
+
+    <label for="timeB">Time B</label>
+    <input type="text" id="timeB" placeholder="Nome do Time B" required />
+
+    <label for="placarA">Gols do Time A</label>
+    <input type="number" id="placarA" min="0" value="0" required />
+
+    <label for="placarB">Gols do Time B</label>
+    <input type="number" id="placarB" min="0" value="0" required />
+
+    <h3>Marcar Gols</h3>
+
+    <div id="golsInputs">
+      <!-- Campos de gol serão adicionados aqui -->
+    </div>
+
+    <button type="button" id="addGolBtn">Adicionar Gol</button>
+
+    <button type="submit">Salvar Jogo</button>
+  </form>
+
+  <h2>Jogos Registrados</h2>
+  <div id="listaJogos"></div>
+
+<script>
+  const form = document.getElementById('formJogo');
+  const listaJogos = document.getElementById('listaJogos');
+  const golsInputs = document.getElementById('golsInputs');
+  const addGolBtn = document.getElementById('addGolBtn');
+
+  // Função para criar um bloco de input para marcar um gol
+  function criarInputGol() {
+    const div = document.createElement('div');
+    div.classList.add('golInput');
+    div.style.marginBottom = '8px';
+
+    div.innerHTML = `
+      <input type="text" placeholder="Nome do jogador" class="nomeJogador" required style="width: 50%; margin-right: 10px;" />
+      <select class="timeGol" required style="width: 30%; margin-right: 10px;">
+        <option value="" disabled selected>Time</option>
+        <option value="A">Time A</option>
+        <option value="B">Time B</option>
+      </select>
+      <input type="number" placeholder="Minuto" class="minutoGol" min="0" max="120" required style="width: 15%;" />
+      <button type="button" class="removerGolBtn" style="background:#dc3545; color:white; border:none; border-radius:4px; padding:0 8px; cursor:pointer;">X</button>
+    `;
+
+    // Evento para remover o gol
+    div.querySelector('.removerGolBtn').addEventListener('click', () => {
+      golsInputs.removeChild(div);
+    });
+
+    golsInputs.appendChild(div);
+  }
+
+  addGolBtn.addEventListener('click', () => {
+    criarInputGol();
+  });
+
+  // Função para carregar jogos do localStorage
+  function carregarJogos() {
+    const jogos = JSON.parse(localStorage.getItem('jogos')) || [];
+    listaJogos.innerHTML = '';
+
+    jogos.forEach((jogo, index) => {
+      const div = document.createElement('div');
+      div.classList.add('jogo');
+
+      let golsHTML = '';
+      if (jogo.gols && jogo.gols.length > 0) {
+        golsHTML += '<div class="gols-container"><strong>Gols:</strong>';
+        jogo.gols.forEach(gol => {
+          const timeNome = gol.time === 'A' ? jogo.timeA : jogo.timeB;
+          golsHTML += `<div class="gol"><span>${gol.minuto}'</span> - ${gol.nome} (${timeNome})</div>`;
+        });
+        golsHTML += '</div>';
+      }
+
+      div.innerHTML = `
+        <button class="btn-excluir" onclick="excluirJogo(${index})" title="Excluir jogo">X</button>
+        <strong>Data:</strong> ${jogo.data}<br/>
+        <strong>Placar:</strong> ${jogo.timeA} ${jogo.placarA} x ${jogo.placarB} ${jogo.timeB}
+        ${golsHTML}
+      `;
+
+      listaJogos.appendChild(div);
+    });
+  }
+
+  // Excluir jogo pelo índice
+  function excluirJogo(index) {
+    const jogos = JSON.parse(localStorage.getItem('jogos')) || [];
+    jogos.splice(index, 1);
+    localStorage.setItem('jogos', JSON.stringify(jogos));
+    carregarJogos();
+  }
+
+  // Deixar excluirJogo disponível globalmente para os botões gerados dinamicamente
+  window.excluirJogo = excluirJogo;
+
+  // Quando enviar o formulário
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Pegar dados do jogo
+    const novoJogo = {
+      data: document.getElementById('data').value,
+      timeA: document.getElementById('timeA').value.trim(),
+      timeB: document.getElementById('timeB').value.trim(),
+      placarA: Number(document.getElementById('placarA').value),
+      placarB: Number(document.getElementById('placarB').value),
+      gols: []
+    };
+
+    // Pegar gols preenchidos
+    const golDivs = golsInputs.querySelectorAll('.golInput');
+    for (const div of golDivs) {
+      const nome = div.querySelector('.nomeJogador').value.trim();
+      const time = div.querySelector('.timeGol').value;
+      const minuto = Number(div.querySelector('.minutoGol').value);
+
+      if (nome && (time === 'A' || time === 'B') && minuto >= 0) {
+        novoJogo.gols.push({ nome, time, minuto });
+      }
+    }
+
+    // Salvar no localStorage
+    const jogos = JSON.parse(localStorage.getItem('jogos')) || [];
+    jogos.push(novoJogo);
+    localStorage.setItem('jogos', JSON.stringify(jogos));
+
+    // Resetar o formulário
+    form.reset();
+    golsInputs.innerHTML = '';
+
+    carregarJogos();
+  });
+
+  // Carregar jogos na inicialização
+  carregarJogos();
+</script>
+</body>
+</html>
